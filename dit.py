@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+# TODO lock, EMA, AdaZero, embded
 class lock():
     def __init__(self, path_to_lock):
         self.lock = path_to_lock
