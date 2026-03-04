@@ -105,6 +105,7 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
             opt.zero_grad()
             # log
             dist.reduce(loss, 0)
+            # break
             if (rank == 0):
                 print(f"epoch {e}, step {idx}, avg_loss {loss / world_size}")
                 file.write(f"{e} {idx} {loss}\n") # type: ignore
@@ -124,7 +125,7 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
                 samples = detokenize(tokenizer_model, samples)
                 for i in range(samples.shape[0]):
                     # output_dir/version/epoch/images.png
-                    print("saving samplings")
+                    # print("saving samplings")
                     save_tensor_to_image(samples[i], prefix, f"r{rank}_i{i}.png")
                 if rank == 0:
                     print("saving model")
