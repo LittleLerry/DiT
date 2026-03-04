@@ -21,6 +21,7 @@ def get_general_conf(_conf):
         "version": 1,
         "f_lock": "./stop.lock",
         "tokenizer_model_path": "/mnt/GPU_10T/data/zzx/DiT/tokenizer",
+        "log_file": "./log/log.bin"
     }
     return conf
 
