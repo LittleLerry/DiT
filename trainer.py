@@ -45,6 +45,7 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
     num_samples_per_gpu = conf["num_samples_per_gpu"]
     op_epoch_interval = conf["op_epoch_interval"] 
     version = conf["version"]
+    log_file = conf["log_file"]
 
     local_rank = rank
 
@@ -72,6 +73,11 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
 
     if(rank == 0):
         print("entry training loop")
+    file = None
+    if (rank == 0):
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        file = open(log_file, "w")
+
     for e in range(epoch):
         # train
         ddp_model.train()
@@ -101,6 +107,7 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
             dist.reduce(loss, 0)
             if (rank == 0):
                 print(f"epoch {e}, step {idx}, avg_loss {loss / world_size}")
+                file.write(f"{e} {idx} {loss}\n") # type: ignore
         # sample
         if (e % op_epoch_interval):
             ddp_model.eval()
@@ -122,4 +129,6 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
                     torch.save(ddp_model.module.state_dict(), os.path.join(prefix, f"checkpoint.pt"))
         slr.step()
         dist.barrier()
+    if rank == 0:
+        file.close() # type: ignore
     cleanup()
