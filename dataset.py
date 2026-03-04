@@ -14,7 +14,7 @@ class tensor_image_dataset(Dataset):
         # (B, C, H, W) and (B,)
         assert (len(self.data.shape) == 4) and (len(self.labels.shape) == 1)
         assert self.data.shape[0] == self.labels.shape[0]
-        self.l = self.labels.shape
+        self.l = self.labels.shape[0]
 
     def __len__(self):
         return self.l

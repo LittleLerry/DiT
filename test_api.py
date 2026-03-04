@@ -1,14 +1,16 @@
-def split_list_into_chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
-    # Calculate chunk size and remainder
-    k, m = divmod(len(lst), n)
-    # Create chunks: first m chunks have size k+1, remaining have size k
-    return [lst[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n)]
+from dit import dit
+import torch
+from train_dit import get_dataset_conf, get_general_conf
+from dataset import tensor_image_dataset
+from tokenize_images import detokenize, save_tensor_to_image
+from diffusers import AutoencoderKL
 
-lst = [str(x) + "/pds" for x in range(20)]
+ds = tensor_image_dataset(**get_dataset_conf())
+device = "cuda:0"
 
-l = split_list_into_chunks(lst, 3)
-print(len(l))
-print(l[0])
-print(l[1])
-print(l[2])
+vae = AutoencoderKL.from_pretrained(get_general_conf()["tokenizer_model_path"]).to(device)
+vae.eval()
+
+i , _ = ds.__getitem__(114514)
+
+save_tensor_to_image(detokenize(vae, i.to(device)), ".","debug.png")

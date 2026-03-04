@@ -19,11 +19,14 @@ def get_general_conf():
         "num_samples_per_gpu": 4,
         "op_epoch_interval": 32,
         "version": 1,
+        "f_lock": "./stop.lock",
+        "tokenizer_model_path": "/mnt/GPU_10T/data/zzx/DiT/tokenizer",
     }
     return conf
 
 def get_model_conf():
     # def __init__(self, num_blocks, d_in, d_model, d_ff, num_heads, h_in, w_in, patch_size, dp, num_labels):
+    # from the paper
     conf = {
         "num_blocks": 28,
         "d_in": 4,
@@ -47,9 +50,11 @@ def get_dataset_conf():
 
 if __name__ == '__main__':
     num_processes = 8
+    
     conf = get_general_conf()
     model_conf = get_model_conf()
     dataset_conf = get_dataset_conf()
 
     print("Entry training loop")
     mp.spawn(fn=ddp_trainer, args=(conf, dit, tensor_image_dataset, model_conf, dataset_conf), nprocs=num_processes, join=True) # To be trained on 8*H800
+    # create detailed log method
