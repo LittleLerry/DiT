@@ -110,7 +110,7 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
                 print(f"epoch {e}, step {idx}, avg_loss {loss / world_size}")
                 file.write(f"{e} {idx} {loss}\n") # type: ignore
         # sample
-        if (e % op_epoch_interval):
+        if (e % op_epoch_interval == 0):
             ddp_model.eval()
             with torch.inference_mode():
 
