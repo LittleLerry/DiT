@@ -77,6 +77,7 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
         ddp_model.train()
         train_sampler.set_epoch(e)
         for idx, (images, labels) in enumerate(train_dataloader):
+            # break
             shape = images.shape[:-3] # (*, )
             z, y = images.to(device), labels.to(device) # (*, C, H, W) and (*,)
             # replace y with empty label with certain probability
