@@ -58,7 +58,10 @@ class dit(nn.Module):
         num_patches = (h_in // patch_size) * (w_in // patch_size)
         self.patch = patchify(d_in, patch_size, d_model)
         self.depatch = depatchify(d_model, patch_size, d_in, h_in, w_in)
-        self.pos_embd = self.get_sinusoidal_pos_emb(num_patches ,d_model) # out_shape: (seq_len, d_model)
+
+        # out_shape: (seq_len, d_model)
+        self.register_buffer("pos_embd", self.get_sinusoidal_pos_emb(num_patches, d_model))
+
         self.t_embd = time_embd(d_model) # out_shape: (*,) -> (*, d_model)
         self.num_labels = num_labels
         self.y_embd = nn.Embedding(num_labels + 1, d_model) # out_shape: (*, d_model), (*,)
@@ -80,8 +83,7 @@ class dit(nn.Module):
     def empty_label(self):
         return self.num_labels
     
-    @staticmethod
-    def get_sinusoidal_pos_emb(seq_len, d_model):
+    def get_sinusoidal_pos_emb(self, seq_len, d_model):
         position = torch.arange(0, seq_len).unsqueeze(1)  # (seq_len, 1)
         div_term = torch.exp(torch.arange(0, d_model, 2) * -(math.log(10000.0) / d_model))
 
@@ -101,7 +103,7 @@ class patchify(nn.Module):
     # (*, C, H, W) -> (*, seq_len, d_model)
     def forward(self, x):
         return self.conv1(x).flatten(-2).transpose(-1,-2)
-
+        
 class depatchify(nn.Module):
     def __init__(self, in_channels, patch_size, out_channels, h, w):
         super().__init__()

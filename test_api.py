@@ -1,20 +1,14 @@
+from train_dit import get_general_conf, get_model_conf, get_dataset_conf
 from dit import dit
-import torch
-from train_dit import get_dataset_conf, get_general_conf
+from trainer import ddp_trainer
+import torch.multiprocessing as mp
 from dataset import tensor_image_dataset
-from tokenize_images import detokenize, save_tensor_to_image
-from diffusers import AutoencoderKL
-from torch.utils.data import DataLoader
 
-ds = tensor_image_dataset(**get_dataset_conf())
-dl = DataLoader(ds, batch_size=5)
-device = "cuda:0"
+if __name__ == '__main__':
+    conf = get_general_conf({})
+    model_conf = get_model_conf(conf)
+    dataset_conf = get_dataset_conf(conf)
 
-vae = AutoencoderKL.from_pretrained(get_general_conf()["tokenizer_model_path"]).to(device)
-vae.eval()
-
-for i , _ in dl:
-    imgs = detokenize(vae, i.to(device))
-    for i in range(imgs.shape[0]):
-        save_tensor_to_image(imgs[i], ".",f"_{i}_debug.png")
-    break
+    print("Entry training loop")
+    mp.spawn(fn=ddp_trainer, args=(conf, dit, tensor_image_dataset, model_conf, dataset_conf), nprocs=conf["world_size"], join=True) # To be trained on 8*H800
+    # create detailed log method

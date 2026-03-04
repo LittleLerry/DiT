@@ -37,7 +37,7 @@ def get_model_conf(_conf):
         "w_in": _conf["width"],
         "patch_size": 2,
         "dp": 0.0,
-        "num_labels": 1000,
+        "num_labels": _conf["num_labels"],
     }
     return conf
 
