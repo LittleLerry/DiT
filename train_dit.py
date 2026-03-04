@@ -32,7 +32,7 @@ def get_model_conf(_conf):
         "num_blocks": 28,
         "d_in": 4,
         "d_model": 1024,
-        "d_ff": 2048,
+        "d_ff": 4096,
         "num_heads": 16,
         "h_in": _conf["width"],
         "w_in": _conf["width"],

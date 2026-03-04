@@ -124,8 +124,10 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
                 samples = detokenize(tokenizer_model, samples)
                 for i in range(samples.shape[0]):
                     # output_dir/version/epoch/images.png
+                    print("saving samplings")
                     save_tensor_to_image(samples[i], prefix, f"r{rank}_i{i}.png")
                 if rank == 0:
+                    print("saving model")
                     torch.save(ddp_model.module.state_dict(), os.path.join(prefix, f"checkpoint.pt"))
         slr.step()
         dist.barrier()
