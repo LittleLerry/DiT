@@ -3,7 +3,7 @@ from trainer import ddp_trainer
 import torch.multiprocessing as mp
 from dataset import tensor_image_dataset
 
-def get_general_conf():
+def get_general_conf(_conf):
     conf = {
         "world_size": 8,
         "batch_size": 32,
@@ -24,7 +24,7 @@ def get_general_conf():
     }
     return conf
 
-def get_model_conf():
+def get_model_conf(_conf):
     # def __init__(self, num_blocks, d_in, d_model, d_ff, num_heads, h_in, w_in, patch_size, dp, num_labels):
     # from the paper
     conf = {
@@ -33,15 +33,15 @@ def get_model_conf():
         "d_model": 1024,
         "d_ff": 2048,
         "num_heads": 16,
-        "h_in": 32,
-        "w_in": 32,
+        "h_in": _conf["width"],
+        "w_in": _conf["width"],
         "patch_size": 2,
         "dp": 0.0,
         "num_labels": 1000,
     }
     return conf
 
-def get_dataset_conf():
+def get_dataset_conf(_conf):
     conf = {
         "path_to_tokenzied_image_tensor": "./data/i.pt",
         "path_to_labels": "./data/l.pt",
@@ -49,12 +49,10 @@ def get_dataset_conf():
     return conf
 
 if __name__ == '__main__':
-    num_processes = 8
-    
-    conf = get_general_conf()
-    model_conf = get_model_conf()
-    dataset_conf = get_dataset_conf()
+    conf = get_general_conf({})
+    model_conf = get_model_conf(conf)
+    dataset_conf = get_dataset_conf(conf)
 
     print("Entry training loop")
-    mp.spawn(fn=ddp_trainer, args=(conf, dit, tensor_image_dataset, model_conf, dataset_conf), nprocs=num_processes, join=True) # To be trained on 8*H800
+    mp.spawn(fn=ddp_trainer, args=(conf, dit, tensor_image_dataset, model_conf, dataset_conf), nprocs=conf["world_size"], join=True) # To be trained on 8*H800
     # create detailed log method

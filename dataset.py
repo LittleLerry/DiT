@@ -12,6 +12,8 @@ class tensor_image_dataset(Dataset):
             self.labels = torch.zeros(size=self.data.shape[:-3], dtype=torch.int64)
 
         # (B, C, H, W) and (B,)
+        if len(self.labels.shape) == 2:
+            self.labels = self.labels.squeeze(-1)
         assert (len(self.data.shape) == 4) and (len(self.labels.shape) == 1)
         assert self.data.shape[0] == self.labels.shape[0]
         self.l = self.labels.shape[0]

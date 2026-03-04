@@ -12,7 +12,13 @@ from diffusers import AutoencoderKL
 """
 A DiT trainer without EMA.
 """
-def setup(rank, world_size, backend):
+def setup_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    random.seed(seed)
+    # torch.backends.cudnn.deterministic = True
+
+def setup_cluster(rank, world_size, backend):
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = "29500"
     dist.init_process_group(backend, rank=rank, world_size=world_size)
@@ -22,7 +28,6 @@ def cleanup():
 
 def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf):
     lk = f_lock(conf["f_lock"]) # not used
-    random.setstate(rank)
     # train conf
     world_size = conf["world_size"]
     batch_size = conf["batch_size"]
@@ -44,8 +49,8 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
     local_rank = rank
 
     torch.cuda.set_device(rank)
-
-    setup(local_rank, world_size, "nccl")
+    setup_cluster(local_rank, world_size, "nccl")
+    setup_seed(rank)
     if (rank == 0):
         print("cluster inited")
     device = torch.device("cuda", local_rank)
@@ -75,7 +80,7 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
             shape = images.shape[:-3] # (*, )
             z, y = images.to(device), labels.to(device) # (*, C, H, W) and (*,)
             # replace y with empty label with certain probability
-            mask = torch.rand_like(y, device=y.device) < empty_condition_rate
+            mask = torch.rand_like(y.float(), device=y.device) < empty_condition_rate
             y[mask] = num_labels # num_labels = empty_label
 
             t = torch.rand(size=shape, device=device) # (*, )
@@ -108,9 +113,10 @@ def ddp_trainer(rank, conf, model_class, dataset_class, model_conf, dataset_conf
 
                 prefix =  os.path.join(saving_output_dir, f"version{version}",f"epoch{e}")
 
+                samples = detokenize(tokenizer_model, samples)
                 for i in range(samples.shape[0]):
                     # output_dir/version/epoch/images.png
-                    save_tensor_to_image(detokenize(tokenizer_model, samples[i]), prefix, f"r{rank}_i{i}.png")
+                    save_tensor_to_image(samples[i], prefix, f"r{rank}_i{i}.png")
                 if rank == 0:
                     torch.save(ddp_model.module.state_dict(), os.path.join(prefix, f"checkpoint.pt"))
         slr.step()
