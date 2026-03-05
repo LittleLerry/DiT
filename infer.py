@@ -22,7 +22,8 @@ def save_tensor_to_image(tensor, save_path, image_name):
     os.makedirs(save_path, exist_ok=True)
 
     tensor = tensor.detach().cpu()
-    tensor = torch.clamp(tensor, 0, 1)
+
+    tensor = torch.clamp(tensor / 2 + 0.5, 0, 1) # [-1,1] -> [0,1]
     tensor = tensor.permute(1, 2, 0)
 
     numpy_img = tensor.numpy()

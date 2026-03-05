@@ -35,12 +35,16 @@ class parquet_image_dataset(Dataset):
         return (self.transform(img), torch.tensor([label], dtype=torch.int16)) # ((B,C,H,W),(,))
 
 def tokenize(tokenize_model, image): # image is a tensor with (B, C, H, W)
+    # critical!
+    # only accetps for [-1,1] values of tensors
     posterior = tokenize_model.encode(image).latent_dist
-    latents = posterior.sample()
+    latents = posterior.sample() * tokenize_model.config.scaling_factor 
     return latents
 
 def detokenize(tokenize_model, latents):
-    return tokenize_model.decode(latents).sample
+    # critical!
+    # only accetps for [-1,1] values of tensors
+    return tokenize_model.decode(latents / tokenize_model.config.scaling_factor ).sample
 
 def tokenize_task(rank, file_list, tokenizer_model_path, width):
     file_list = file_list[rank]
@@ -53,7 +57,7 @@ def tokenize_task(rank, file_list, tokenizer_model_path, width):
         transforms.Resize((width, width)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        # transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]), # critical
     ])
 
     for file in file_list:
@@ -98,7 +102,7 @@ def _debug():
         transforms.Resize((width, width)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        # transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
     ])
     batch_size = 4
     dataset = parquet_image_dataset(pd.read_parquet(file), "image", "label", preprocess)
