@@ -104,7 +104,7 @@ def _debug():
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
     ])
-    batch_size = 4
+    batch_size = 128
     dataset = parquet_image_dataset(pd.read_parquet(file), "image", "label", preprocess)
     model = AutoencoderKL.from_pretrained(tokenizer_model_path).to(device)
 
@@ -114,19 +114,25 @@ def _debug():
 
     model.eval()
     with torch.inference_mode():
-        for (image, label) in dataloader:
+        for r, (image, label) in enumerate(dataloader):
             for i in range(image.shape[0]):
-                save_tensor_to_image(image[i], ".", f"{i}.png")
+                # save_tensor_to_image(image[i], ".", f"{i}.png")
+                pass
             print(f"input shape:{image.shape}")
             input = image.to(device)
+            print(f"input shape:{input.shape}, mean:{torch.mean(input)}, max:{torch.max(input)}, min:{torch.min(input)}, std:{torch.std(input)}")
             latents.append(tokenize(model, input).cpu())
-            print(f"encoded shape:{latents[0].shape}")
-            _d = detokenize(model, latents[0].to(device))
-            print(f"decoded shape:{_d.shape}")
+            print(f"encoded shape:{latents[r].shape}, mean:{torch.mean(latents[r])}, max:{torch.max(latents[r])}, min:{torch.min(latents[r])}, std:{torch.std(latents[r])}")
+            mask = torch.logical_or(latents[r] > 1.0, latents[r] < -1.0)* 1.0
+            print(f"rate: {torch.sum(mask) / (batch_size * 4 * 32 * 32)}")
+            # _d = detokenize(model, latents[r].to(device))
+            # print(f"decoded shape:{_d.shape}")
 
-            for i in range(_d.shape[0]):
-                save_tensor_to_image(_d[i], ".", f"d{i}.png")
-            break
+            # for i in range(_d.shape[0]):
+                # save_tensor_to_image(_d[i], ".", f"d{i}.png")
+            #    pass
+            if (r >= 7):
+                break
 
 @AIGenerated
 def split_list_into_chunks(lst, n):
