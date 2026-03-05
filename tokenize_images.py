@@ -9,14 +9,12 @@ import torch.multiprocessing as mp
 from infer import save_tensor_to_image
 import argparse
 import glob
-from utils import AIGenerated
 import multiprocessing
 import os
 
 image_pt_suffix = ".image.pt"
 label_pt_suffix = ".label.pt"
 
-@AIGenerated
 class parquet_image_dataset(Dataset):
     def __init__(self, dataframe, data_name, label_name, transform):
         self.df = dataframe
@@ -69,7 +67,7 @@ def tokenize_task(rank, file_list, tokenizer_model_path, width):
         
         model.eval()
         with torch.inference_mode():
-            for (image, label) in dataloader:
+            for image, label in dataloader:
                 input = image.to(device)
                 latents.append(tokenize(model, input).cpu())
                 labels.append(label)
@@ -134,7 +132,6 @@ def _debug():
             if (r >= 7):
                 break
 
-@AIGenerated
 def split_list_into_chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     # Calculate chunk size and remainder
