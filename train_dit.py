@@ -6,7 +6,7 @@ from dataset import tensor_image_dataset
 def get_general_conf(_conf):
     conf = {
         "world_size": 8,
-        "batch_size": 64,
+        "batch_size": 32,
         "lr": 1e-4,
         "epoch": 1024,
         "empty_condition_rate": 0.1,

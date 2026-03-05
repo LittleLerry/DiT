@@ -3,6 +3,8 @@ import torch.nn as nn
 import math
 import os
 # TODO EMA
+def modulate(x, shift, scale):
+    return x * (1 + scale) + shift
 
 class attn(nn.Module):
     def __init__(self, d_model, num_heads, dp, ) -> None:
@@ -44,8 +46,8 @@ class ditblock(nn.Module):
     def forward(self, x, c): # (*, seq_len, d_model), (*, d_model)
         # each (*, d_model)
         alpha1, beta1, gamma1, alpha2, beta2, gamma2 = self.c_mlp(c).chunk(6, dim=-1) # (*, 6 * d_model) 
-        x = x + self.mha(self.ln1(x) * gamma1.unsqueeze(-2) + beta1.unsqueeze(-2)) * alpha1.unsqueeze(-2)
-        x = x + self.ffn(self.ln2(x) * gamma2.unsqueeze(-2) + beta2.unsqueeze(-2)) * alpha2.unsqueeze(-2)
+        x = x + self.mha(modulate(self.ln1(x), beta1.unsqueeze(-2), gamma1.unsqueeze(-2))) * alpha1.unsqueeze(-2) # critical!
+        x = x + self.ffn(modulate(self.ln2(x), beta2.unsqueeze(-2), gamma2.unsqueeze(-2))) * alpha2.unsqueeze(-2)
         return x
 
 class dit(nn.Module):
@@ -103,7 +105,21 @@ class patchify(nn.Module):
     # (*, C, H, W) -> (*, seq_len, d_model)
     def forward(self, x):
         return self.conv1(x).flatten(-2).transpose(-1,-2)
-        
+
+"""
+def unpatchify(self, x):
+    c = self.out_channels
+    p = self.x_embedder.patch_size[0]
+    h = w = int(x.shape[1] ** 0.5)
+    assert h * w == x.shape[1]
+
+    x = x.reshape(shape=(x.shape[0], h, w, p, p, c))
+    x = torch.einsum('nhwpqc->nchpwq', x)
+    imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
+    return imgs
+"""
+
+# TODO
 class depatchify(nn.Module):
     def __init__(self, in_channels, patch_size, out_channels, h, w):
         super().__init__()
@@ -131,6 +147,7 @@ class time_embd(nn.Module):
         )
         self.d_t = d_t
     
+    # TODO
     # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
     @staticmethod
     def freq_embd(t, dim, max_period=10000): # (*,)
