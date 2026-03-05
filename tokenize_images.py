@@ -63,7 +63,7 @@ def tokenize_task(rank, file_list, tokenizer_model_path, width):
         labels = []
 
         dataset = parquet_image_dataset(pd.read_parquet(file), "image", "label", preprocess)
-        dataloader = DataLoader(dataset, batch_size=256, num_workers=2, shuffle=False) # batch_size=256 will use ~70 GB memory per device
+        dataloader = DataLoader(dataset, batch_size=256, num_workers=2, shuffle=False) # batch_size=256 will use ~69 GB memory per device
         
         model.eval()
         with torch.inference_mode():
