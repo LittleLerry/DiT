@@ -3,6 +3,7 @@ import torch.nn as nn
 import math
 import os
 # TODO EMA
+# does it critical
 def modulate(x, shift, scale):
     return x * (1 + scale) + shift
 
@@ -146,11 +147,11 @@ class time_embd(nn.Module):
             nn.Linear(d_model, d_model),
         )
         self.d_t = d_t
-    
-    # TODO
-    # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
+    # TODO FIX BUG
     @staticmethod
     def freq_embd(t, dim, max_period=10000): # (*,)
+        t = t * max_period # FUCK YOU, embedding can be bitch
+
         half = dim // 2
         freqs = torch.exp(
             -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half
